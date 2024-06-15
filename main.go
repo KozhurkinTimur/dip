@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
 
 	trmgorm "github.com/avito-tech/go-transaction-manager/gorm"
 	"github.com/gofiber/fiber"
@@ -83,7 +85,15 @@ var (
 )
 
 func main() {
-	db, err := gorm.Open(postgres.Open("host=localhost port=6444 user=xenous password=xenous dbname=xenous sslmode=disable"), &gorm.Config{})
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_DBNAME")
+	dbSSL := os.Getenv("DB_SSL")
+
+	// Connect to the database
+	db, err := gorm.Open(postgres.Open(fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", dbHost, dbPort, dbUser, dbPassword, dbName, dbSSL)), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
@@ -96,15 +106,14 @@ func main() {
 	// USER
 
 	app.Get("/", func(c *fiber.Ctx) {
-        c.Send("Hello, World!")
-    })
+		c.Send("Hello, World!")
+	})
 
 	app.Post("/registraition", func(c *fiber.Ctx) {
 		var req AuthInput
 		if err := c.BodyParser(&req); err != nil {
 			BadRequest(c, "Invalid request")
 		}
-		
 
 		res, err := CreateUser(context.Background(), &User{
 			Id:       uuid.New(),
