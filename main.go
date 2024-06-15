@@ -275,7 +275,7 @@ func main() {
 		OK(c, res)
 	})
 
-	app.Listen("localhost:8080")
+	app.Listen("0.0.0.0:8080")
 }
 
 // BD COURSE
