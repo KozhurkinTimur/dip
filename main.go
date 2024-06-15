@@ -7,7 +7,7 @@ import (
 	"os"
 
 	trmgorm "github.com/avito-tech/go-transaction-manager/gorm"
-	"github.com/gofiber/fiber"
+    "github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -101,17 +101,19 @@ func main() {
 	// Migrate the schema
 	db.AutoMigrate(&Course{}, &User{})
 
-	app := fiber.New()
+	r := gin.Default()
 
-	// USER
+    r.Use(corsMiddleware())
 
-	app.Get("/", func(c *fiber.Ctx) {
-		c.Send("Hello, World!")
-	})
+    r.GET("/", func(c *gin.Context) {
+        c.JSON(200, gin.H{
+            "message": "Hello, World!",
+        })
+    })
 
-	app.Post("/registraition", func(c *fiber.Ctx) {
+	r.POST("/registraition", func(c *gin.Context) {
 		var req AuthInput
-		if err := c.BodyParser(&req); err != nil {
+		if err := c.ShouldBindJSON(&req); err != nil {
 			BadRequest(c, "Invalid request")
 		}
 
@@ -134,12 +136,12 @@ func main() {
 		OK(c, res)
 	})
 
-	app.Post("/signIn", func(c *fiber.Ctx) {
+	r.POST("/signIn", func(c *gin.Context) {
 		var req SignInInput
-		if err := c.BodyParser(&req); err != nil {
+		if err := c.ShouldBindJSON(&req); err != nil {
 			BadRequest(c, "Invalid request")
 		}
-
+	
 		res, err := Auth(context.Background(), req.Email, db, trmgorm.DefaultCtxGetter)
 
 		if err != nil {
@@ -156,13 +158,14 @@ func main() {
 		} else {
 			BadRequest(c, "Invalid email or password")
 		}
+
 	})
 
 	// COURSE
-
-	app.Post("/createCourse", func(c *fiber.Ctx) {
+	
+	r.POST("/createCourse", func(c *gin.Context) {
 		var req CreateCourseInput
-		if err := c.BodyParser(&req); err != nil {
+		if err := c.ShouldBind(&req); err != nil {
 			BadRequest(c, "Invalid request")
 		}
 
@@ -184,10 +187,10 @@ func main() {
 
 		OK(c, res)
 	})
-
-	app.Post("/updateCourse", func(c *fiber.Ctx) {
+	
+	r.POST("/updateCourse", func(c *gin.Context) {
 		var req UpdateCourseInput
-		if err := c.BodyParser(&req); err != nil {
+		if err := c.ShouldBind(&req); err != nil {
 			BadRequest(c, "Invalid request")
 		}
 
@@ -214,10 +217,10 @@ func main() {
 
 		OK(c, res)
 	})
-
-	app.Post("/deleteCourse", func(c *fiber.Ctx) {
+	
+	r.POST("/deleteCourse", func(c *gin.Context) {
 		var req DeleteCourseInput
-		if err := c.BodyParser(&req); err != nil {
+		if err := c.ShouldBind(&req); err != nil {
 			BadRequest(c, "Invalid request")
 		}
 
@@ -239,10 +242,10 @@ func main() {
 
 		OK(c, res)
 	})
-
-	app.Post("/getCourse", func(c *fiber.Ctx) {
+	
+	r.POST("/getCourse", func(c *gin.Context) {
 		var req GetCourseInput
-		if err := c.BodyParser(&req); err != nil {
+		if err := c.ShouldBind(&req); err != nil {
 			BadRequest(c, "Invalid request")
 		}
 
@@ -264,8 +267,8 @@ func main() {
 
 		OK(c, res)
 	})
-
-	app.Post("/getCourses", func(c *fiber.Ctx) {
+	
+	r.POST("/getCourses", func(c *gin.Context) {
 		res, err := GetCourses(context.Background(), db, trmgorm.DefaultCtxGetter)
 
 		if err != nil {
@@ -275,7 +278,7 @@ func main() {
 		OK(c, res)
 	})
 
-	app.Listen("0.0.0.0:8080")
+	r.Run("0.0.0.0:8080")
 }
 
 // BD COURSE
@@ -458,21 +461,33 @@ func DeleteUser(ctx context.Context, userId uuid.UUID, db *gorm.DB, getter *trmg
 
 // HTTP RESPONSE
 
-func BadRequest(c *fiber.Ctx, message string) error {
-	return c.Status(fiber.StatusBadRequest).JSON(&Error{Message: message})
+func BadRequest(c *gin.Context, message string) {
+	
 }
 
-func Internal(c *fiber.Ctx, message string) error {
-	return c.Status(fiber.StatusInternalServerError).JSON(&Error{Message: message})
+func Internal(c *gin.Context, message string) {
 }
-func Unauthorized(c *fiber.Ctx, message string) error {
-	return c.Status(fiber.StatusUnauthorized).JSON(&Error{Message: message})
+func Unauthorized(c *gin.Context, message string) {
 }
 
-func OK(c *fiber.Ctx, data any) error {
-	if data == nil {
-		return c.Status(fiber.StatusOK).JSON(&Error{Message: "OK"})
-	}
+func OK(c *gin.Context, data any) {
+	// if data == nil {
+	// }
+}
 
-	return c.Status(fiber.StatusOK).JSON(data)
+// MIDDLEWARE
+
+func corsMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+        c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+        if c.Request.Method == "OPTIONS" {
+            c.AbortWithStatus(204)
+            return
+        }
+
+        c.Next()
+    }
 }
