@@ -255,7 +255,7 @@ func main() {
 			BadRequest(c, "Invalid id")
 		}
 
-		res, err := DeleteCourse(context.Background(), id, db, trmgorm.DefaultCtxGetter)
+		res, err := GetCourse(context.Background(), id, db, trmgorm.DefaultCtxGetter)
 
 		if err != nil {
 			switch {
