@@ -160,6 +160,8 @@ func main() {
 			BadRequest(c, "Invalid email or password")
 		}
 
+		OK(c, res)
+
 	})
 
 	// COURSE
