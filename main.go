@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 
 	trmgorm "github.com/avito-tech/go-transaction-manager/gorm"
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -103,13 +104,13 @@ func main() {
 
 	r := gin.Default()
 
-    r.Use(corsMiddleware())
+	r.Use(corsMiddleware())
 
-    r.GET("/", func(c *gin.Context) {
-        c.JSON(200, gin.H{
-            "message": "Hello, World!",
-        })
-    })
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Hello, World!",
+		})
+	})
 
 	r.POST("/registraition", func(c *gin.Context) {
 		var req AuthInput
@@ -141,7 +142,7 @@ func main() {
 		if err := c.ShouldBindJSON(&req); err != nil {
 			BadRequest(c, "Invalid request")
 		}
-	
+
 		res, err := Auth(context.Background(), req.Email, db, trmgorm.DefaultCtxGetter)
 
 		if err != nil {
@@ -162,7 +163,7 @@ func main() {
 	})
 
 	// COURSE
-	
+
 	r.POST("/createCourse", func(c *gin.Context) {
 		var req CreateCourseInput
 		if err := c.ShouldBind(&req); err != nil {
@@ -187,7 +188,7 @@ func main() {
 
 		OK(c, res)
 	})
-	
+
 	r.POST("/updateCourse", func(c *gin.Context) {
 		var req UpdateCourseInput
 		if err := c.ShouldBind(&req); err != nil {
@@ -217,7 +218,7 @@ func main() {
 
 		OK(c, res)
 	})
-	
+
 	r.POST("/deleteCourse", func(c *gin.Context) {
 		var req DeleteCourseInput
 		if err := c.ShouldBind(&req); err != nil {
@@ -242,7 +243,7 @@ func main() {
 
 		OK(c, res)
 	})
-	
+
 	r.POST("/getCourse", func(c *gin.Context) {
 		var req GetCourseInput
 		if err := c.ShouldBind(&req); err != nil {
@@ -267,7 +268,7 @@ func main() {
 
 		OK(c, res)
 	})
-	
+
 	r.POST("/getCourses", func(c *gin.Context) {
 		res, err := GetCourses(context.Background(), db, trmgorm.DefaultCtxGetter)
 
@@ -462,32 +463,32 @@ func DeleteUser(ctx context.Context, userId uuid.UUID, db *gorm.DB, getter *trmg
 // HTTP RESPONSE
 
 func BadRequest(c *gin.Context, message string) {
-	
+	c.JSON(http.StatusInternalServerError, gin.H{"BadRequest": message})
 }
 
 func Internal(c *gin.Context, message string) {
+	c.JSON(http.StatusInternalServerError, gin.H{"Internal": message})
 }
 func Unauthorized(c *gin.Context, message string) {
 }
 
-func OK(c *gin.Context, data any) {
-	// if data == nil {
-	// }
+func OK(c *gin.Context, response any) {
+	c.JSON(http.StatusOK, gin.H{"OK": response})
 }
 
 // MIDDLEWARE
 
 func corsMiddleware() gin.HandlerFunc {
-    return func(c *gin.Context) {
-        c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-        c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-        if c.Request.Method == "OPTIONS" {
-            c.AbortWithStatus(204)
-            return
-        }
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
 
-        c.Next()
-    }
+		c.Next()
+	}
 }
