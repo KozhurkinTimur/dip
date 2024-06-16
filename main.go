@@ -463,7 +463,7 @@ func DeleteUser(ctx context.Context, userId uuid.UUID, db *gorm.DB, getter *trmg
 // HTTP RESPONSE
 
 func BadRequest(c *gin.Context, message string) {
-	c.JSON(http.StatusInternalServerError, gin.H{"BadRequest": message})
+	c.JSON(http.StatusBadRequest, gin.H{"BadRequest": message})
 }
 
 func Internal(c *gin.Context, message string) {
